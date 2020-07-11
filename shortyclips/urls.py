@@ -27,9 +27,13 @@ urlpatterns = [
     path('api/v1/user/<int:pk>', views.UserInfo.as_view()),
     path('api/v1/user/login', login),
     path('api/v1/clips/', views.ClipList.as_view()),
-    path('api/v1/clip/<int:pk>', views.ClipDetail.as_view()),
+    path('api/v1/clip/<int:pk>', views.getClipDetail),
     path('api/v1/clip/<int:pk>/like', views.postLike),
-    path('api/v1/clip/new',views.ClipCreate.as_view()),
-    path('api/v1/user/favorites',views.getUserFavorite)
-
+    path('api/v1/clip/category/<int:categoryID>', views.ClipCategoryList.as_view()),
+    # path('api/v1/test', views.readCSV),
+    path('api/v1/clip/new', views.ClipCreate.as_view()),
+    path('api/v1/user/favorites', views.getUserFavorite),
+    path('api/v1/home', views.homeResponse),
+    path('api/v1/popluarSearch',views.popluarSearchResult),
+    path('api/v1/searchItem',views.postSearchItem)
 ]

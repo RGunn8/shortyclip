@@ -4,17 +4,28 @@ from rest_framework import serializers
 import json
 import six
 
-from shortyclipsAPI.models import ClipUser, Clip, Like
+from shortyclipsAPI.models import ClipUser, Clip, Like, Category, SearchItem
 
 
-class ClipSerializer( serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id', 'name')
+
+
+class ClipSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(many=False, read_only=True, slug_field="username")
+    # categoryName = serializers.SlugRelatedField(many=False, slug_field='name',required=False,queryset=Category.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), required=False)
     likes = serializers.SerializerMethodField()
+    created = serializers.DateTimeField(input_formats="%d-%m-%Y")
     currentUserLikes = serializers.SerializerMethodField('get_currentUserLike')
 
     class Meta:
         model = Clip
-        fields = ('id', 'title', 'duration', 'likes', 'clipURL', 'tags', 'user','created', 'currentUserLikes')
+        fields = (
+            'id', 'title', 'duration', 'likes', 'clipURL', 'tags', 'user', 'created', 'currentUserLikes', 'category',
+        )
 
     def get_likes(self, obj):
         return obj.like_set.count()
@@ -27,6 +38,17 @@ class ClipSerializer( serializers.ModelSerializer):
             if count > 0:
                 return True
         return False
+
+
+class SearchItemSerializer(serializers.ModelSerializer):
+    searchItem = serializers.CharField(max_length=150, allow_blank=False,allow_null=False)
+    # created = serializers.DateTimeField(input_formats="%d-%m-%Y")
+
+    class Meta:
+        model = SearchItem
+        fields = (
+            'searchItem','createdAt'
+        )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -55,6 +77,3 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'username', 'password', 'clips'
         )
-
-
-

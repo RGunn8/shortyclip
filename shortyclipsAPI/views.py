@@ -1,7 +1,12 @@
 from django.contrib.auth import authenticate
+import csv
+import random
+
+from django.db.models import Count
 from django.shortcuts import render
 
 # Create your views here.
+from collections import Counter
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.authtoken.models import Token
@@ -13,18 +18,25 @@ from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP
 from rest_framework.views import APIView
 from rest_framework import filters
 
-
-
-from shortyclipsAPI.models import Clip, Like, ClipUser
-from shortyclipsAPI.serializers import ClipSerializer, UserSerializer
+from shortyclipsAPI.models import Clip, Like, ClipUser, Category, SearchItem
+from shortyclipsAPI.serializers import ClipSerializer, UserSerializer,SearchItemSerializer
 
 
 class ClipList(generics.ListAPIView):
     filter_class = Clip
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title','user__username','tags']
-    queryset = Clip.objects.all().order_by('-created')
+    search_fields = ['title', 'user__username', 'tags']
+    queryset = Clip.objects.all().order_by('?')
     serializer_class = ClipSerializer
+
+
+class ClipCategoryList(generics.ListAPIView):
+    serializer_class = ClipSerializer
+
+    def get_queryset(self):
+        categoryID = self.kwargs['categoryID']
+        clips = Clip.objects.all().filter(category_id=categoryID).order_by('-created')
+        return clips
 
 
 @permission_classes((IsAuthenticatedOrReadOnly,))
@@ -40,6 +52,7 @@ class ClipCreate(CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 
 @permission_classes(IsAuthenticated)
@@ -65,6 +78,58 @@ def postLike(request, pk):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
+@csrf_exempt
+@api_view(['GET'])
+def getClipDetail(request, pk):
+    try:
+        clip = Clip.objects.get(pk=pk)
+    except Clip.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if clip.tags is not None and len(clip.tags) > 0:
+        related_clips = Clip.objects.filter(tags__overlap=clip.tags).exclude(id=clip.id)[:10]
+    else:
+        related_clips = Clip.objects.filter(category_id=clip.category_id).exclude(id=clip.id)[:10]
+    detailClipSerialzer = ClipSerializer(clip, many=False)
+    relatedClipSerialzer = ClipSerializer(related_clips, many=True)
+    return Response({'clip': detailClipSerialzer.data,
+                     'relatedClip': relatedClipSerialzer.data},
+                    status=HTTP_200_OK)
+
+@csrf_exempt
+@permission_classes((IsAuthenticatedOrReadOnly))
+@api_view(["GET"])
+def popluarSearchResult(request):
+    searchItems = SearchItem.objects.all().values('searchItem').annotate(count = Count('searchItem')).order_by('-count')[:5]
+    return Response({'searchItems': searchItems},
+                    status=HTTP_200_OK)
+
+@csrf_exempt
+@api_view(['POST'])
+def postSearchItem(request):
+    serializer = SearchItemSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+@csrf_exempt
+@permission_classes((IsAuthenticatedOrReadOnly))
+@api_view(["GET"])
+def homeResponse(request):
+    return Response({'clips': getRandomSeralizer().data},
+                    status=HTTP_200_OK)
+
+
+def getRandomSeralizer():
+    clipIDs = Clip.objects.values_list('id', flat=True)
+    randomClipsID = random.sample(list(clipIDs), min(len(clipIDs), 15))
+    randomClips = Clip.objects.filter(id__in=randomClipsID)
+    return ClipSerializer(randomClips, many=True)
+
+
 @permission_classes({IsAuthenticated})
 class UserInfo(generics.RetrieveUpdateDestroyAPIView):
     queryset = ClipUser.objects.all()
@@ -85,8 +150,25 @@ def getUserFavorite(request):
         clips.append(like.clip)
     serializer = ClipSerializer(clips, many=True)
     return Response({'clips': serializer.data})
-    # return Response({'error': 'Error returning clips'},
-    #                 status=HTTP_404_NOT_FOUND)
+
+
+# @api_view(["GET"])
+# def readCSV(request):
+#
+#     with open('/Users/ryanlgunn8/Desktop/shortyclips/shortyclipsAPI/clips.csv') as csv_file:
+#         csv_reader = csv.reader(csv_file,delimiter=',')
+#         line_count = 0
+#         for row in csv_reader:
+#             if line_count == 0:
+#                 print(f'Column names are {", ".join(row)}')
+#                 line_count += 1
+#             else:
+#                 clipTags = row[4].split(',')
+#                 Clip.objects.create(title=row[0],category_id=row[1],duration=row[2],
+#                                     clipURL=row[3],tags= clipTags,user_id=1)
+#
+#         return Response({'token': "test"},
+#                         status=HTTP_200_OK)
 
 
 @csrf_exempt
@@ -108,7 +190,6 @@ def login(request):
 
 
 class UserCreate(APIView):
-
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():

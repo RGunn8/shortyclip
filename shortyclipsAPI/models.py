@@ -5,6 +5,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
 
 # Create your models here.
+from django.db.models import DO_NOTHING
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -28,16 +29,27 @@ class ClipUser(AbstractBaseUser):
             Token.objects.create(user=instance)
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=100, blank=False)
+
+
 class Clip(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=100, blank=False)
+    category = models.ForeignKey('Category', null=True, blank=True,on_delete=DO_NOTHING)
     duration = models.IntegerField(default=0, blank=False)
     clipURL = models.URLField()
     tags = ArrayField(models.CharField(max_length=200), blank=True, null=True)
     user = models.ForeignKey(to=ClipUser, on_delete=models.CASCADE)
+    shared = models.IntegerField(default=0,blank=False)
+    followTags = ArrayField(models.CharField(max_length=200),blank=True,null=True)
 
 
 class Like(models.Model):
     user = models.OneToOneField(ClipUser, on_delete=models.CASCADE)
     clip = models.ForeignKey(Clip, on_delete=models.CASCADE)
     liked_at = models.DateTimeField(auto_now_add=True)
+
+class SearchItem(models.Model):
+    searchItem = models.CharField(max_length=150,blank=False,null=False)
+    createdAt = models.DateTimeField(auto_now_add=True)
