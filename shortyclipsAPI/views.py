@@ -152,23 +152,35 @@ def getUserFavorite(request):
     return Response({'clips': serializer.data})
 
 
-# @api_view(["GET"])
-# def readCSV(request):
-#
-#     with open('/Users/ryanlgunn8/Desktop/shortyclips/shortyclipsAPI/clips.csv') as csv_file:
-#         csv_reader = csv.reader(csv_file,delimiter=',')
-#         line_count = 0
-#         for row in csv_reader:
-#             if line_count == 0:
-#                 print(f'Column names are {", ".join(row)}')
-#                 line_count += 1
-#             else:
-#                 clipTags = row[4].split(',')
-#                 Clip.objects.create(title=row[0],category_id=row[1],duration=row[2],
-#                                     clipURL=row[3],tags= clipTags,user_id=1)
-#
-#         return Response({'token': "test"},
-#                         status=HTTP_200_OK)
+@api_view(["GET"])
+def readCSV(request):
+    Category.objects.create(name="Sports")
+    Category.objects.create(name="Movies")
+    Category.objects.create(name="Television")
+    Category.objects.create(name="Random")
+    Category.objects.create(name="Music")
+    Category.objects.create(name="Video Games")
+    Category.objects.create(name="Animals")
+    Category.objects.create(name="Education")
+    Category.objects.create(name="Politics")
+    Category.objects.create(name="Travel")
+    Category.objects.create(name="Animation")
+    Category.objects.create(name="People")
+    Category.objects.create(name="Internet")
+    with open('/Users/ryanlgunn8/Desktop/shortyclips/shortyclipsAPI/clips.csv') as csv_file:
+        csv_reader = csv.reader(csv_file,delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+                line_count += 1
+            else:
+                clipTags = row[4].split(',')
+                Clip.objects.create(title=row[0],category_id=row[1],duration=row[2],
+                                    clipURL=row[3],tags= clipTags,user_id=1)
+
+        return Response({'token': "test"},
+                        status=HTTP_200_OK)
 
 
 @csrf_exempt
@@ -201,7 +213,7 @@ class UserCreate(APIView):
                     json['token'] = token.key
                     json['password'] = 'valid'
                     return Response(json, status=status.HTTP_201_CREATED)
-
+        else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

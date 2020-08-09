@@ -24,7 +24,7 @@ SECRET_KEY = 'ohj$&@rn6z8_49_1pe^oog_3hg!xd@i+@rublcjkab5u%kd^gi'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['9u2rjbmnw8.execute-api.us-east-1.amazonaws.com']
 
 # Application definition
 INSTALLED_APPS = [
@@ -88,11 +88,11 @@ WSGI_APPLICATION = 'shortyclips.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'shortyclips',
-        'USER': 'ryanlgunn8',
-        'PASSWORD': 'winter99',
-        'HOST': 'localhost',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'Clips',
+        'USER': 'shortyClipAdmin',
+        'PASSWORD': 'Crosscountry10',
+        'HOST': 'clips-1.c5qpvfnorkad.us-east-1.rds.amazonaws.com',
         'PORT': '5432',
     }
 }

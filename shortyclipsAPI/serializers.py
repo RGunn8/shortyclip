@@ -18,7 +18,6 @@ class ClipSerializer(serializers.ModelSerializer):
     # categoryName = serializers.SlugRelatedField(many=False, slug_field='name',required=False,queryset=Category.objects.all())
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), required=False)
     likes = serializers.SerializerMethodField()
-    created = serializers.DateTimeField(input_formats="%d-%m-%Y")
     currentUserLikes = serializers.SerializerMethodField('get_currentUserLike')
 
     class Meta:
@@ -54,7 +53,7 @@ class SearchItemSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(validators=[UniqueValidator(queryset=ClipUser.objects.all())])
     password = serializers.CharField(min_length=4, write_only=True)
-    clips = ClipSerializer(source='clip_set', read_only=True, many=True)
+    clips = ClipSerializer(source='clip_set', read_only=True, many=True,allow_null=True)
 
     def create(self, validated_data):
         user = ClipUser.objects.create(
